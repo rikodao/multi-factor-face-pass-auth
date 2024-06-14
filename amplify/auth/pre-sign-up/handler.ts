@@ -3,22 +3,17 @@ const AWS = require('aws-sdk');
 const { S3Client, CopyObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const s3Client = new S3Client({});
 const rekognition = new AWS.Rekognition({ apiVersion: '2016-06-27' });
+import { env } from '$amplify/env/pre-sign-up';
+const bucketName = env.MULTIFACTOR_AUTHENTICATION_PASSWORD_FACE_US_EAST_1_BUCKET_NAME;
 
 
-
-function parseS3Url(s3Url:string) {
-  const url = new URL(s3Url);
-  const bucket = url.hostname.split('.')[0];
-  const key = decodeURIComponent(url.pathname.substring(1));
-  return { bucket, key };
-}
 const crypto = require('crypto');
 function hash(plainText:string){
   return  crypto.createHash('md5').update(plainText).digest('hex')
 }
 
 
-async function renameS3Object(bucketName:string, oldKey:string, newKey:string) {
+async function renameS3Object(oldKey:string, newKey:string) {
   console.log({bucketName});
   console.log({oldKey});
   console.log({newKey});
@@ -27,8 +22,8 @@ async function renameS3Object(bucketName:string, oldKey:string, newKey:string) {
     // Copy the object to the new key
     const copyParams = {
       Bucket: bucketName,
-      CopySource: `${bucketName}/${oldKey}`,
       Key: newKey,
+      CopySource: `${bucketName}/${oldKey}`,
     };
     await s3Client.send(new CopyObjectCommand(copyParams));
     console.log(`Object copied to ${newKey}`);
@@ -48,20 +43,16 @@ async function renameS3Object(bucketName:string, oldKey:string, newKey:string) {
 
 
 export const handler: PreSignUpTriggerHandler = async (event) => {
-  // event.response.autoConfirmUser = true;
-  // return event
   console.log(event.request);
   
-  const s3uri = event.request.userAttributes["address"]
-  console.log(s3uri);
+  const key = `sign-up/${event.request.userAttributes["address"]}`
 
-  const { bucket, key } = parseS3Url(s3uri);
-  console.log({ bucket, key });
+  console.log({ bucketName, key });
 
   const params = {
     Image: {
       S3Object: {
-        Bucket: bucket,
+        Bucket: bucketName,
         Name: key
       }
     },
@@ -70,12 +61,13 @@ export const handler: PreSignUpTriggerHandler = async (event) => {
 
   try {
     const data = await rekognition.detectFaces(params).promise();
+    
     const faceCount = data.FaceDetails.length;
     if (faceCount !== 1) throw new Error(`Found ${faceCount} face. Only one face accept`)
 
       const emailHash = hash(event.request.userAttributes["email"])
       const signUpNewKey = `sign-up/${emailHash}.jpg`
-      await renameS3Object(bucket, key, signUpNewKey) 
+      await renameS3Object(key, signUpNewKey) 
     
       event.response.autoConfirmUser = true;
       return event

@@ -25,11 +25,11 @@ const statement = new iam.PolicyStatement({
     "rekognition:CompareFaces",
     "s3:*",
   ],
-  // resources: ["*"],
-  resources: [
-    backend.preSignUp.resources.lambda.functionArn,
-    backend.preAuthentication.resources.lambda.functionArn,
-  ],
+  resources: ["*"],
+  // resources: [
+  //   backend.preSignUp.resources.lambda.functionArn,
+  //   backend.preAuthentication.resources.lambda.functionArn,
+  // ],
 })
 
 

@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { Amplify } from "aws-amplify";
 import outputs from "../amplify_outputs.json";
 import '@aws-amplify/ui-react/styles.css';
-import { Authenticator, Heading, useTheme } from "@aws-amplify/ui-react";
+import { Authenticator } from "@aws-amplify/ui-react";
 import ImageUploder from "./components/ImageUploder.tsx"
 Amplify.configure(outputs);
 import { Buffer } from 'buffer';
@@ -34,7 +34,7 @@ const services = {
         ...input.options,
         userAttributes: {
           ...input.options?.userAttributes,
-          address: `s3://${outputs.custom.bucketName}/sign-up/undefined.jpg`,
+          address: `undefined.jpg`,
         },
       },
     });
@@ -50,7 +50,7 @@ const services = {
       options: {
         // ...input.options,
         userAttributes: {
-          address: `s3://${outputs.custom.bucketName}/sign-in/undefined.jpg`,
+          address: `undefined.jpg`,
         },
       },
     });
@@ -65,7 +65,7 @@ const components = {
       return (
         <>
           <Authenticator.SignUp.FormFields />
-          <ImageUploder sessionid="sign-in/undefined.jpg" ></ImageUploder >
+          <ImageUploder sessionid="sign-up/undefined.jpg" ></ImageUploder >
         </>
       );
     },
@@ -87,6 +87,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <Authenticator services={services} components={components}>
       {({ signOut, user }) => (
         <>
+         {/* @ts-ignore */}
           <App  user={user}/>
 
 

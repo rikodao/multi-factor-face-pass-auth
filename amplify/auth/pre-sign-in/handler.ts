@@ -1,10 +1,11 @@
 import type { PreAuthenticationTriggerHandler } from "aws-lambda"
-const { S3Client, CopyObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const s3Client = new S3Client({  });
+const { S3Client, CopyObjectCommand } = require('@aws-sdk/client-s3');
+const s3Client = new S3Client({ });
 const { RekognitionClient, CompareFacesCommand } = require("@aws-sdk/client-rekognition");
 const client = new RekognitionClient({ });
+import { env } from '$amplify/env/pre-sign-in';
+const bucketName = env.MULTIFACTOR_AUTHENTICATION_PASSWORD_FACE_US_EAST_1_BUCKET_NAME;
 
-// import { RekognitionClient, CompareFacesCommand } from "@aws-sdk/client-rekognition"; 
 
 const AWS = require('aws-sdk');
 
@@ -15,38 +16,21 @@ function hash(plainText:string){
   return  crypto.createHash('md5').update(plainText).digest('hex')
 }
 
-
-function parseS3Url(s3Url:string) {
-  const url = new URL(s3Url);
-  const bucket = url.hostname.split('.')[0];
-  const key = decodeURIComponent(url.pathname.substring(1));
-  return { bucket, key };
-}
-
-
-async function renameS3Object(bucketName:string, oldKey:string, newKey:string) {
-  console.log({bucketName});
+async function renameS3Object(oldKey:string, newKey:string) {
   console.log({oldKey});
   console.log({newKey});
+  console.log({bucketName});
   
   try {
     // Copy the object to the new key
     const copyParams = {
       Bucket: bucketName,
       // CopySource: oldKey,
-      CopySource: 'amplify-amplifyvitereactt-amplifygen2signupuseast1-f9snpdfweebu/sign-in/undefined.jpg',
+      CopySource: `${bucketName}/${oldKey}`,
       Key: newKey,
     };
     await s3Client.send(new CopyObjectCommand(copyParams));
     console.log(`Object copied to ${newKey}`);
-
-  //   // Delete the original object
-  //   const deleteParams = {
-  //     Bucket: bucketName,
-  //     Key: oldKey,
-  //   };
-  //   await s3Client.send(new DeleteObjectCommand(deleteParams));
-  //   console.log(`Original object ${oldKey} deleted`);
   } catch (error) {
     throw new Error(`Error renaming object: ${error}`); 
     
@@ -56,34 +40,30 @@ async function renameS3Object(bucketName:string, oldKey:string, newKey:string) {
 
 
 export const handler: PreAuthenticationTriggerHandler = async (event) => {
-  const s3uri = event.request.userAttributes["address"]
-  console.log({s3uri});
-  
-  const { bucket, key } = parseS3Url(s3uri);
-  console.log({bucket});
+  const signIn='sign-in'
+  const key = `${signIn}/${event.request.userAttributes["address"]}`
   console.log({key});
-
-  const emailHash = hash(event.request.userAttributes["email"])
-  const signInNewKey = `sign-in/${emailHash}.jpg`
   
-  await renameS3Object(bucket, key, signInNewKey) 
+  const emailHash = hash(event.request.userAttributes["email"])
+  const fileName = `${emailHash}.jpg`
+  const signInNewKey = `${signIn}/${fileName}`
+  
+  await renameS3Object(key, signInNewKey) 
 
 
-
-  console.log({ bucket, key });
   try {
-    const signUpNewKey = `sign-up/${emailHash}.jpg`
-    console.log({ bucket, signInNewKey, signUpNewKey });
+    const signUpNewKey = `sign-up/${fileName}`
+    console.log({  signInNewKey, signUpNewKey });
     const params = {
       SourceImage: {
         S3Object: {
-          Bucket: bucket,
+          Bucket: bucketName,
           Name: signInNewKey,
         },
       },
       TargetImage: {
         S3Object: {
-          Bucket: bucket,
+          Bucket: bucketName,
           Name: signUpNewKey,
         },
       },

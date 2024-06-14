@@ -1,15 +1,18 @@
 import { defineStorage } from '@aws-amplify/backend';
 import { preSignedUrl } from '../functions/pre-signed-url/resource';
+import { preSignUp } from '../auth/pre-sign-up/resource';
+import { preAuthentication } from '../auth/pre-sign-in/resource'
 export const storage = defineStorage({
-  name: 'amplify-gen2-sign-up-us-east-1',
+  name: 'multifactor-authentication-password-face-us-east-1',
   access: (allow) => ({
     'sign-up/*': [
-      allow.guest.to(['read']),
-      allow.resource(preSignedUrl).to(['read', 'write', 'delete'])
+      allow.resource(preSignedUrl).to(['read', 'write', 'delete']),
+      allow.resource(preSignUp).to(['read', 'write', 'delete']),
     ],
     'sign-in/*': [
-      allow.guest.to(['read']),
-      allow.resource(preSignedUrl).to(['read', 'write', 'delete'])
+      allow.resource(preSignedUrl).to(['read', 'write', 'delete']),
+      allow.resource(preAuthentication).to(['read', 'write', 'delete'])
+
     ],
   })
 });

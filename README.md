@@ -1,25 +1,40 @@
-## AWS Amplify React+Vite Starter Template
+# Multi-Factor Face Pass Auth
 
-This repository provides a starter template for creating applications using React+Vite and AWS Amplify, emphasizing easy setup for authentication, API, and database capabilities.
+This repository provides a starter template for creating applications using React+Vite and AWS Amplify Gen2, emphasizing easy setup for authentication, API, and database capabilities.  
 
-## Overview
+## Getting Started
 
-This template equips you with a foundational React application integrated with AWS Amplify, streamlined for scalability and performance. It is ideal for developers looking to jumpstart their project with pre-configured AWS services like Cognito, AppSync, and DynamoDB.
+### QuickStart
+Go to  [Amplify Gen2 Doc Movie](https://docs.amplify.aws/images/gen2/getting-started/react/deploy.mp4)
 
-## Features
+### Run & Dev Locally
 
-- **Authentication**: Setup with Amazon Cognito for secure user authentication.
-- **API**: Ready-to-use GraphQL endpoint with AWS AppSync.
-- **Database**: Real-time database powered by Amazon DynamoDB.
+2. Install dependencies:
+    ```bash
+    npm install
+    ```
 
-## Deploying to AWS
+3. Initialize Amplify:
+    ```bash
+    npx ampx sandbox   
+    ```
 
-For detailed instructions on deploying your application, refer to the [deployment section](https://docs.amplify.aws/react/start/quickstart/#deploy-a-fullstack-app-to-aws) of our documentation.
 
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+5. Start the development server:
+    ```bash
+    npm run dev
+    ```
 
 ## License
 
-This library is licensed under the MIT-0 License. See the LICENSE file.
+This library is licensed under the MIT-0 License. See the [LICENSE](LICENSE) file for more information.
+
+## Acknowledgements
+
+This project uses the following AWS services:
+- AWS Amplify
+- Amazon Cognito
+- Amazon Rekognition
+- Amazon S3
+- AWS Lambda
+

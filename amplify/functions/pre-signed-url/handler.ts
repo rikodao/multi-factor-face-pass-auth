@@ -7,7 +7,7 @@ const logger = console;
 const s3Client = new S3();
 
 export const handler: Handler = async (event:any, context: Context) => {
-    const bucketName = env.AMPLIFY_GEN_2_SIGN_UP_US_EAST_1_BUCKET_NAME;
+    const bucketName = env.MULTIFACTOR_AUTHENTICATION_PASSWORD_FACE_US_EAST_1_BUCKET_NAME;
     logger.info("******bucket_name********");
     logger.info(bucketName);
     logger.info("******bucket_name********");
