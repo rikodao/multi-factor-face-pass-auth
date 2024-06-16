@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.1.12",
+    "@aws-sdk/client-cognito-identity-provider": "^3.600.0",
     "aws-amplify": "^6.2.0",
     "aws-sdk": "^2.1637.0",
     "dotenv": "^16.4.5",
+    "md5": "^2.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-webcam": "^7.2.0"

@@ -14,15 +14,11 @@ const videoConstraints = {
     height: 720,
     facingMode: "user"
 };
-import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { fetchAuthSession } from 'aws-amplify/auth';
-import outputs from "../../amplify_outputs.json";
 
-export default ({ sessionid }: {sessionid: string}) => {
+export default ({ image, setImage }: { image: string | null, setImage: any }) => {
     const webcamRef = useRef(null);
-    const [presignedURL, setPresignedURL] = useState(null);
+
     const [deviceId, setDeviceId] = useState(videoConstraints);
-    const [image, setImage] = useState(null);
     const [devices, setDevices] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -34,27 +30,27 @@ export default ({ sessionid }: {sessionid: string}) => {
 
     useEffect(
         () => {
-            {/* @ts-ignore */}
+            {/* @ts-ignore */ }
             navigator.mediaDevices.enumerateDevices().then(handleDevices);
         },
         [handleDevices]
     );
     const cameraSelector = () => {
-        {/* @ts-ignore */}
+        {/* @ts-ignore */ }
         const option = devices.map((device) => <option key={device.deviceId} value={device.deviceId}>{device.label}</option>)
-        
+
         return (
-            
+
             <SelectField
                 label="Select your camera device"
-                 /* @ts-ignore */    
+                /* @ts-ignore */
                 value={deviceId.deviceId}
                 onClick={() => {
-                     /* @ts-ignore */    
+                    /* @ts-ignore */
                     navigator.mediaDevices.enumerateDevices().then(handleDevices);
                 }}
                 onChange={(e) => {
-                     /* @ts-ignore */    
+                    /* @ts-ignore */
                     setDeviceId({ ...videoConstraints, deviceId: e.target.value })
                 }}
             >
@@ -64,72 +60,14 @@ export default ({ sessionid }: {sessionid: string}) => {
         )
     }
 
-    async function getPresignedUrl(sessionid: string) {
-        const { credentials } = await fetchAuthSession();
-        console.log(credentials);
-        const awsRegion = outputs.auth.aws_region;
-        const functionName = outputs.custom.preSignedUrlFunctionName;
-        
-        const labmda = new LambdaClient({ credentials: credentials, region: awsRegion });
-        const command = new InvokeCommand({
-            FunctionName: functionName,
-            Payload: Buffer.from(JSON.stringify({ key: sessionid })),
-        });
-        const apiResponse = await labmda.send(command);
-        console.log(apiResponse);
 
-        if (apiResponse.Payload) {
-            const payloadStr = new TextDecoder().decode(apiResponse.Payload);
-
-
-            const payload = JSON.parse(payloadStr);
-            console.log(payload.body);
-            setPresignedURL(payload.body)
-        }
-    }
-
-
-    useEffect(() => {
-        getPresignedUrl(sessionid)
-    }, [sessionid])
-
-
-
-
-    /*
-   * Upload Image to S3
-   */
-    const handleUploadImagetoS3 = async (imageSrc: string, presignedURL: string) => {
-        const res = await fetch(imageSrc)
-        const blob = await res.blob()
-        const response = await fetch(presignedURL, {
-            method: 'PUT',
-            body: blob,
-            headers: {
-                'Content-Type': 'image/jpeg',
-            }
-        })
-
-        if (!response.ok) {
-            alert("Error happen")
-            console.error("Erorr")
-            console.error(response)
-            return {
-                body: null
-            };
-        }
-    };
-
-    const capture = useCallback(async (presignedURL: string) => {
-
+    const capture = useCallback(async () => {
         setIsLoading(true)
-        await getPresignedUrl(sessionid)
-         /* @ts-ignore */    
+        /* @ts-ignore */
         const imageSrc = webcamRef.current?.getScreenshot();
         if (imageSrc) {
-            handleUploadImagetoS3(imageSrc, presignedURL)
-                .then(() => setImage(imageSrc))
-                .finally(() => setIsLoading(false));
+            await setImage(imageSrc)
+            setIsLoading(false)
         }
     }, [webcamRef]);
 
@@ -160,8 +98,8 @@ export default ({ sessionid }: {sessionid: string}) => {
                             <div>{cameraSelector()}</div>
                             <View as="div" marginTop="1rem">
                                 <ButtonGroup justifyContent="center">
-                                    {/* @ts-ignore */    }
-                                    <Button variation="primary" isLoading={isLoading} onClick={capture.bind(this, presignedURL)} >Capture</Button>
+                                    {/* @ts-ignore */}
+                                    <Button variation="primary" isLoading={isLoading} onClick={capture.bind(this)} >Capture</Button>
                                 </ButtonGroup>
                             </View>
                         </>

@@ -1,59 +1,90 @@
 import type { PreAuthenticationTriggerHandler } from "aws-lambda"
-const { S3Client, CopyObjectCommand } = require('@aws-sdk/client-s3');
-const s3Client = new S3Client({ });
 const { RekognitionClient, CompareFacesCommand } = require("@aws-sdk/client-rekognition");
-const client = new RekognitionClient({ });
+const client = new RekognitionClient({});
 import { env } from '$amplify/env/pre-sign-in';
 const bucketName = env.MULTIFACTOR_AUTHENTICATION_PASSWORD_FACE_US_EAST_1_BUCKET_NAME;
 
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
-const AWS = require('aws-sdk');
+// SSMクライアントの作成
+const ssmClient = new SSMClient({});
 
-const rekognition = new AWS.Rekognition({ apiVersion: '2016-06-27' });
+const getUserPoolId = async (): Promise<string> => {
+  const command = new GetParameterCommand({
+    Name: "/myapp/userPoolId",
+  });
 
-const crypto = require('crypto');
-function hash(plainText:string){
-  return  crypto.createHash('md5').update(plainText).digest('hex')
-}
-
-async function renameS3Object(oldKey:string, newKey:string) {
-  console.log({oldKey});
-  console.log({newKey});
-  console.log({bucketName});
-  
   try {
-    // Copy the object to the new key
-    const copyParams = {
-      Bucket: bucketName,
-      // CopySource: oldKey,
-      CopySource: `${bucketName}/${oldKey}`,
-      Key: newKey,
-    };
-    await s3Client.send(new CopyObjectCommand(copyParams));
-    console.log(`Object copied to ${newKey}`);
+    const response = await ssmClient.send(command);
+    return response.Parameter?.Value || "";
   } catch (error) {
-    throw new Error(`Error renaming object: ${error}`); 
-    
+    console.error("Error retrieving parameter:", error);
+    throw error;
+  }
+};
+
+const userPoolId = await getUserPoolId();
+
+import { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } from "@aws-sdk/client-cognito-identity-provider";
+// 
+// クライアントの設定
+const cognitoClient = new CognitoIdentityProviderClient({ });
+
+async function verifyEmail(userPoolId: string, username: string, email: string) {
+  try {
+    // AdminUpdateUserAttributesCommandのパラメータを設定
+    const params = {
+      UserPoolId: userPoolId,
+      Username: username,
+      UserAttributes: [
+        {
+          Name: "email",
+          Value: email
+        },
+        {
+          Name: "email_verified",
+          Value: "true"
+        }
+      ]
+    };
+
+    // コマンドの作成
+    const command = new AdminUpdateUserAttributesCommand(params);
+
+    // コマンドの送信
+    const response = await cognitoClient.send(command);
+    console.log("Email verified successfully:", response);
+  } catch (error) {
+    console.error("Error verifying email:", error);
   }
 }
 
 
 
-export const handler: PreAuthenticationTriggerHandler = async (event) => {
-  const signIn='sign-in'
-  const key = `${signIn}/${event.request.userAttributes["address"]}`
-  console.log({key});
-  
-  const emailHash = hash(event.request.userAttributes["email"])
-  const fileName = `${emailHash}.jpg`
-  const signInNewKey = `${signIn}/${fileName}`
-  
-  await renameS3Object(key, signInNewKey) 
 
+export const handler: PreAuthenticationTriggerHandler = async (event) => {
+  
+  const username = event.request.userAttributes.sub;
+  const email = event.request.userAttributes.email;
+
+  console.log({ userPoolId, username, email });
+
+  console.log(event.request);
+  if (event.request.userAttributes.email_verified == "false") {
+    console.log("first Login");
+    await verifyEmail(userPoolId, username, email);
+    return event
+  }
+
+
+
+  const fileName = `${event.request.userAttributes["address"]}`
+  console.log({ fileName });
+  const signInNewKey = `sign-in/${fileName}`
 
   try {
     const signUpNewKey = `sign-up/${fileName}`
-    console.log({  signInNewKey, signUpNewKey });
+    console.log({ signInNewKey, signUpNewKey });
     const params = {
       SourceImage: {
         S3Object: {
@@ -72,7 +103,7 @@ export const handler: PreAuthenticationTriggerHandler = async (event) => {
     const command = new CompareFacesCommand(params);
     const response = await client.send(command);
 
-    
+
     // const response = await rekognition.compareFaces(params)
     console.log('response:', response);
     console.log('FaceMatches:', response.FaceMatches);
@@ -81,12 +112,12 @@ export const handler: PreAuthenticationTriggerHandler = async (event) => {
     if (response.FaceMatches && response.FaceMatches.length == 0) throw new Error("No faces matched.")
     const similarity = response.FaceMatches[0].Similarity;
     console.log(`Similarity: ${similarity}`);
-    if (similarity <= 50) throw new Error("similarity below 50"); 
-      
+    if (similarity <= 50) throw new Error("similarity below 50");
+
     console.log('Faces are similar enough.');
     return event
-    
+
   } catch (error) {
-    throw new Error (`Error comparing faces:, ${error}`); 
+    throw new Error(`Error comparing faces:, ${error}`);
   }
 }
