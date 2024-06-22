@@ -2,6 +2,9 @@
 
 This repository provides a starter template for creating applications using React+Vite and AWS Amplify Gen2, emphasizing easy setup for authentication, API, and database capabilities.  
 
+## Architecture
+![Architetcture](./docs/imgs/architecture.png)
+
 ## Getting Started
 
 ### QuickStart

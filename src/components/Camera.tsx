@@ -1,4 +1,3 @@
-
 import {
     Image,
     Button,
@@ -9,25 +8,32 @@ import {
 } from '@aws-amplify/ui-react';
 import { useRef, useState, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
+
+// Set video constraints
+// ビデオ制約を設定
 const videoConstraints = {
-    width: 1280,
-    height: 720,
-    facingMode: "user"
+    width: 1280, // Video width
+    height: 720, // Video height
+    facingMode: "user" // Use front camera
 };
 
 export default ({ image, setImage }: { image: string | null, setImage: any }) => {
-    const webcamRef = useRef(null);
+    const webcamRef = useRef(null); // Hold a reference to the webcam
 
-    const [deviceId, setDeviceId] = useState(videoConstraints);
-    const [devices, setDevices] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [deviceId, setDeviceId] = useState(videoConstraints); // Manage the state of the selected device ID
+    const [devices, setDevices] = useState([]); // Manage the state of available devices
+    const [isLoading, setIsLoading] = useState(false); // Manage the state of whether an image is being captured
 
+    // Function to get available devices
+    // 利用可能なデバイスを取得する関数
     const handleDevices = useCallback(
         (mediaDevices: never[]) =>
             setDevices(mediaDevices.filter(({ kind }) => kind === "videoinput")),
         [setDevices]
     );
 
+    // Get available devices when the component is mounted
+    // コンポーネントがマウントされたときに、利用可能なデバイスを取得する
     useEffect(
         () => {
             {/* @ts-ignore */ }
@@ -35,39 +41,41 @@ export default ({ image, setImage }: { image: string | null, setImage: any }) =>
         },
         [handleDevices]
     );
+
+    // Generate a dropdown to select the camera device
+    // カメラデバイスを選択するためのドロップダウンを生成する関数
     const cameraSelector = () => {
         {/* @ts-ignore */ }
         const option = devices.map((device) => <option key={device.deviceId} value={device.deviceId}>{device.label}</option>)
 
         return (
-
             <SelectField
-                label="Select your camera device"
+                label="Select your camera device" // Label
                 /* @ts-ignore */
-                value={deviceId.deviceId}
+                value={deviceId.deviceId} // Selected device ID
                 onClick={() => {
                     /* @ts-ignore */
-                    navigator.mediaDevices.enumerateDevices().then(handleDevices);
+                    navigator.mediaDevices.enumerateDevices().then(handleDevices); // Re-fetch devices
                 }}
                 onChange={(e) => {
                     /* @ts-ignore */
-                    setDeviceId({ ...videoConstraints, deviceId: e.target.value })
+                    setDeviceId({ ...videoConstraints, deviceId: e.target.value }) // Update device ID
                 }}
             >
                 {option}
             </SelectField>
-
         )
     }
 
-
+    // Function to capture an image
+    // 画像をキャプチャする関数
     const capture = useCallback(async () => {
-        setIsLoading(true)
+        setIsLoading(true) // Set the loading flag
         /* @ts-ignore */
-        const imageSrc = webcamRef.current?.getScreenshot();
+        const imageSrc = webcamRef.current?.getScreenshot(); // Get screenshot from webcam
         if (imageSrc) {
-            await setImage(imageSrc)
-            setIsLoading(false)
+            await setImage(imageSrc) // Pass the image to the parent component
+            setIsLoading(false) // Set the capture complete flag
         }
     }, [webcamRef]);
 
@@ -77,29 +85,27 @@ export default ({ image, setImage }: { image: string | null, setImage: any }) =>
                 <Card variation="elevated" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     {image ? <>
                         <Image
-                            src={image}
+                            src={image} // Display the captured image
                             alt="img"
-
                         />
-                        <Button onClick={setImage.bind(this, null)}>Retry</Button>
+                        <Button onClick={setImage.bind(this, null)}>Retry</Button> {/* Retry button */}
                     </> :
                         <>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <Webcam
-                                    audio={false}
-                                    width={360}
-                                    height={240}
-                                    ref={webcamRef}
-                                    screenshotFormat="image/jpeg"
-                                    videoConstraints={deviceId}
-
+                                    audio={false} // Disable audio
+                                    width={360} // Webcam width
+                                    height={240} // Webcam height
+                                    ref={webcamRef} // Pass the webcam reference
+                                    screenshotFormat="image/jpeg" // Screenshot format
+                                    videoConstraints={deviceId} // Pass the selected device ID
                                 />
                             </div>
-                            <div>{cameraSelector()}</div>
+                            <div>{cameraSelector()}</div> {/* Display device selection dropdown */}
                             <View as="div" marginTop="1rem">
                                 <ButtonGroup justifyContent="center">
                                     {/* @ts-ignore */}
-                                    <Button variation="primary" isLoading={isLoading} onClick={capture.bind(this)} >Capture</Button>
+                                    <Button variation="primary" isLoading={isLoading} onClick={capture.bind(this)} >Capture</Button> {/* Capture button */}
                                 </ButtonGroup>
                             </View>
                         </>

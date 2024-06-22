@@ -7,15 +7,17 @@ import { Authenticator } from "@aws-amplify/ui-react";
 import Camera from "./Camera.tsx"
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { fetchAuthSession } from 'aws-amplify/auth';
+{/* @ts-ignore */ }
 import md5 from "md5";
 
+// Configure AWS Amplify
 Amplify.configure(outputs);
 import { Buffer } from 'buffer';
 import { SignInInput, SignUpInput, signIn, signUp } from "aws-amplify/auth";
 
-// for handleSignUp function. handleSignUp function can't reference signUpImage state.
+// Global variable for handleSignUp function. handleSignUp function can't access signUpImage state.
 let signUpImageGlobal: string | null = null
-// for handleSignIn function. handleSignIn function can't reference signInImage state.
+// Global variable for handleSignIn function. handleSignIn function can't access signInImage state.
 let signInImageGlobal: string | null = null
 
 export default () => {
@@ -23,13 +25,14 @@ export default () => {
     const [signUpImage, setSignUpImage] = useState(null);
     const [signInImage, setSignInImage] = useState(null);
 
-    // for handleSignUp and handleSignIn function.
+    // For handleSignUp and handleSignIn functions
     useEffect(() => {
         signUpImageGlobal = signUpImage
         signInImageGlobal = signInImage
     }, [signUpImage, signInImage]);
 
     
+    // Function to get a pre-signed URL for a file name
     async function getPresignedUrl(fileName: string) {
         const { credentials } = await fetchAuthSession();
         console.log(credentials);
@@ -47,13 +50,13 @@ export default () => {
         if (apiResponse.Payload) {
             const payloadStr = new TextDecoder().decode(apiResponse.Payload);
 
-
             const payload = JSON.parse(payloadStr);
             console.log(payload.body);
             return payload.body
         }
     }
 
+    // Function to upload an image to S3
     const handleUploadImagetoS3 = async (imageSrc: string, presignedURL: string) => {
         const res = await fetch(imageSrc)
         const blob = await res.blob()
@@ -77,6 +80,7 @@ export default () => {
 
 
     const services = {
+        // Sign-up process
         async handleSignUp(input: SignUpInput) {
             console.log(signUpImage);
             if (signUpImageGlobal == null) throw new Error("Please take a Photo");
@@ -105,6 +109,7 @@ export default () => {
                 },
             });
         },
+        // Sign-in process
         async handleSignIn(input: SignInInput) {
 
             console.log(signInImageGlobal);

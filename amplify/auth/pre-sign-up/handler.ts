@@ -26,17 +26,14 @@ export const handler: PreSignUpTriggerHandler = async (event) => {
   };
 
   try {
+    // detect face for check if there is one face.
+    // 顔の数が一つであるか確認するために顔検出を実施
     const data = await rekognition.detectFaces(params).promise();
-    
     const faceCount = data.FaceDetails.length;
     if (faceCount !== 1) throw new Error(`Found ${faceCount} face. Only one face accept`)
     event.response.autoConfirmUser = true;
-
-    event.request.validationData = {'signUpLogin':'true'}
-
-
       
-      return event
+    return event
       
 
 
